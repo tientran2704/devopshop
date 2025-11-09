@@ -1,0 +1,64 @@
+# Remove version as it's now obsolete
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cafe_backend
+    restart: always
+    environment:
+      MONGODB_URI: "mongodb+srv://tranvanducqb1022_db_user:HbQrOcg6aqkIdlEd@cluster0.talji12.mongodb.net/?appName=Cluster0"
+      MONGODB_DATABASE: cafe_db
+      SPRING_PROFILES_ACTIVE: prod
+      JAVA_OPTS: "-Xmx512m -Xms256m"
+    ports:
+      - "8080:8080"
+    networks:
+      - cafe-network
+    healthcheck:
+      test: ["CMD-SHELL", "java -version || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          cpus: '1'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 512M
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cafe_frontend
+    restart: always
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+    networks:
+      - cafe-network
+    environment:
+      - REACT_APP_API_URL=http://localhost:8080/api
+      - NODE_ENV=production
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 256M
+
+networks:
+  cafe-network:
+    driver: bridge
+    name: cafe-network
+
+volumes:
+  mongodb_data:
+    name: cafe_mongodb_data
