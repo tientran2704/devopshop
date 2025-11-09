@@ -1,16 +1,20 @@
-# Stage build
-FROM maven:3.9-eclipse-temurin-17-alpine AS build
+# Dùng OpenJDK 17
+FROM eclipse-temurin:17-jdk-alpine
+
+# Thư mục làm việc
 WORKDIR /app
 
+# Copy file Maven build
 COPY pom.xml .
 COPY src ./src
+COPY mvnw .
+COPY .mvn .mvn
 
-RUN mvn dependency:go-offline -B
-RUN mvn clean package -DskipTests
+# Build ứng dụng
+RUN ./mvnw clean package -DskipTests || mvn clean package -DskipTests
 
-# Stage runtime
-FROM eclipse-temurin:17-jre-alpine
-WORKDIR /app
-COPY --from=build /app/target/*.jar app.jar
+# Expose port
 EXPOSE 8080
-ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Run ứng dụng
+ENTRYPOINT ["java","-jar","target/cafe-management-1.0.0.jar"]
