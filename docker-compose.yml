@@ -1,4 +1,4 @@
-# Remove version as it's now obsolete
+# docker-compose.yml
 services:
   backend:
     build:
@@ -43,7 +43,7 @@ services:
     networks:
       - cafe-network
     environment:
-      - REACT_APP_API_URL=https://devops-1-9r3z.onrender.com
+      - REACT_APP_API_URL=http://nginx/api
       - NODE_ENV=production
     deploy:
       resources:
@@ -53,6 +53,21 @@ services:
         reservations:
           cpus: '0.25'
           memory: 256M
+
+  nginx:
+    image: nginx:latest
+    container_name: cafe_nginx
+    restart: always
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./frontend/build:/usr/share/nginx/html
+    networks:
+      - cafe-network
 
 networks:
   cafe-network:
