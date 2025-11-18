@@ -26,7 +26,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REACT_APP_API_URL=https://devops-1-9r3z.onrender.com
+      - REACT_APP_API_URL=http://localhost:8080
       - NODE_ENV=production
     networks:
       - cafe-network

@@ -4,15 +4,30 @@ FROM eclipse-temurin:17-jdk-alpine
 # Thư mục làm việc
 WORKDIR /app
 
-# Copy file pom và source code
+# Cài Maven và các công cụ cần thiết
+RUN apk add --no-cache maven curl
+
+# Copy Maven settings để tăng timeout và retry khi download dependencies
+RUN mkdir -p /root/.m2
+COPY .m2/settings.xml /root/.m2/settings.xml
+
+# Copy pom.xml trước để tận dụng Docker layer caching
 COPY pom.xml .
+
+# Download dependencies (tách riêng để cache tốt hơn)
+# Retry nếu download thất bại
+RUN mvn dependency:go-offline -B || \
+    (sleep 5 && mvn dependency:go-offline -B) || \
+    (sleep 10 && mvn dependency:go-offline -B) || \
+    mvn dependency:resolve -B
+
+# Copy source code
 COPY src ./src
 
-# Cài Maven trong container nếu chưa có
-RUN apk add --no-cache maven
-
-# Build ứng dụng
-RUN mvn clean package -DskipTests
+# Build ứng dụng với retry mechanism
+RUN mvn clean package -DskipTests -B || \
+    (echo "Build failed, retrying..." && sleep 5 && mvn clean package -DskipTests -B) || \
+    (echo "Build failed again, retrying one more time..." && sleep 10 && mvn clean package -DskipTests -B)
 
 # Expose port
 EXPOSE 8080
