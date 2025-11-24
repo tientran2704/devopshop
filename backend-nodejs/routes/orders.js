@@ -156,9 +156,44 @@ router.patch('/:id/status', authMiddleware, adminMiddleware, async (req, res) =>
       });
     }
 
-    // Update table status if order is completed
+    // Update table status based on order status
+    let tableId = order.tableId;
+    // Handle both populated and non-populated tableId
+    if (tableId && typeof tableId === 'object' && tableId._id) {
+      tableId = tableId._id;
+    } else if (tableId && typeof tableId === 'object' && tableId.id) {
+      tableId = tableId.id;
+    }
+    
     if (status === 'COMPLETED') {
-      await CafeTable.findByIdAndUpdate(order.tableId, { status: 'PAID' });
+      // Check if there are other active orders for this table
+      const activeOrders = await Order.find({
+        tableId: tableId,
+        status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] },
+        _id: { $ne: order._id } // Exclude current order
+      });
+      
+      // If no active orders, set table to AVAILABLE so it can be booked again
+      if (activeOrders.length === 0) {
+        await CafeTable.findByIdAndUpdate(tableId, { status: 'AVAILABLE' });
+      } else {
+        // If there are still active orders, keep table as OCCUPIED
+        await CafeTable.findByIdAndUpdate(tableId, { status: 'OCCUPIED' });
+      }
+    } else if (status === 'CANCELLED') {
+      // If order is cancelled, check if table should be freed
+      const activeOrders = await Order.find({
+        tableId: tableId,
+        status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] },
+        _id: { $ne: order._id } // Exclude current order
+      });
+      
+      if (activeOrders.length === 0) {
+        await CafeTable.findByIdAndUpdate(tableId, { status: 'AVAILABLE' });
+      }
+    } else if (status === 'PENDING' || status === 'CONFIRMED' || status === 'PREPARING' || status === 'READY') {
+      // If order is active, set table to OCCUPIED
+      await CafeTable.findByIdAndUpdate(tableId, { status: 'OCCUPIED' });
     }
 
     res.json(order);

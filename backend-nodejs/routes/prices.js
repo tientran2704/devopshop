@@ -22,9 +22,7 @@ router.put('/test-auth', authMiddleware, (req, res) => {
 // Get all price history (admin only)
 router.get('/history', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    console.log('Getting all price history...');
     const history = await PriceHistory.find().sort({ changeDate: -1 });
-    console.log('Found', history.length, 'price history records');
     res.json(history);
   } catch (error) {
     console.error('Error getting price history:', error);
@@ -38,10 +36,8 @@ router.get('/history', authMiddleware, adminMiddleware, async (req, res) => {
 // Get price history by menu item (admin only)
 router.get('/history/menu/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    console.log('Getting price history for menu item:', req.params.id);
     const history = await PriceHistory.find({ menuItemId: req.params.id })
       .sort({ changeDate: -1 });
-    console.log('Found', history.length, 'records for menu item', req.params.id);
     res.json(history);
   } catch (error) {
     console.error('Error getting price history:', error);
@@ -55,11 +51,6 @@ router.get('/history/menu/:id', authMiddleware, adminMiddleware, async (req, res
 // Update price (admin only)
 router.put('/menu/:id', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    console.log('=== PriceController.updatePrice called ===');
-    console.log('Menu Item ID:', req.params.id);
-    console.log('User:', req.user.username);
-    console.log('Request:', req.body);
-
     const { newPrice, reason } = req.body;
 
     if (!req.params.id || req.params.id === 'undefined') {
@@ -107,7 +98,6 @@ router.put('/menu/:id', authMiddleware, adminMiddleware, async (req, res) => {
     menuItem.price = newPrice;
     await menuItem.save();
 
-    console.log('Price updated successfully');
     res.json(menuItem);
   } catch (error) {
     console.error('Error updating price:', error);

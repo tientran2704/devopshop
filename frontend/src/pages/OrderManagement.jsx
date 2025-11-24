@@ -90,45 +90,60 @@ function OrderManagement() {
               </tr>
             </thead>
             <tbody>
-              {orders.map((order) => (
-                <tr key={order.id}>
-                  <td>#{order.id}</td>
-                  <td>Bàn {order.table.tableNumber}</td>
-                  <td>{order.user.fullName}</td>
-                  <td>
-                    {order.items.map((item, idx) => (
-                      <div key={idx}>
-                        {item.menuItem.name} x{item.quantity}
-                      </div>
-                    ))}
-                  </td>
-                  <td>{order.totalAmount?.toLocaleString('vi-VN')} ₫</td>
-                  <td>{getStatusBadge(order.status)}</td>
-                  <td>{new Date(order.orderTime).toLocaleString('vi-VN')}</td>
-                  <td>
-                    <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
-                      <select
-                        value={order.status}
-                        onChange={(e) => handleUpdateStatus(order.id, e.target.value)}
-                        style={{ padding: '0.25rem' }}
-                      >
-                        <option value="PENDING">Đang chờ</option>
-                        <option value="COMPLETED">Hoàn thành</option>
-                        <option value="CANCELLED">Hủy</option>
-                      </select>
-                      {order.status === 'PENDING' && (
-                        <button
-                          onClick={() => setTransferringOrderId(order.id)}
-                          className="btn btn-secondary"
-                          style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}
-                        >
-                          Chuyển bàn
-                        </button>
+              {orders.map((order) => {
+                const orderId = order._id || order.id;
+                const table = order.tableId || order.table;
+                const user = order.userId || order.user;
+                return (
+                  <tr key={orderId}>
+                    <td>#{orderId?.toString().slice(-6) || 'N/A'}</td>
+                    <td>
+                      {table?.tableNumber ? `Bàn ${table.tableNumber}` : 'N/A'}
+                    </td>
+                    <td>{user?.fullName || user?.username || 'N/A'}</td>
+                    <td>
+                      {order.items && order.items.length > 0 ? (
+                        order.items.map((item, idx) => (
+                          <div key={idx} style={{ marginBottom: '0.25rem' }}>
+                            {item.menuItemName || item.menuItem?.name || 'N/A'} x{item.quantity}
+                          </div>
+                        ))
+                      ) : (
+                        <span style={{ color: '#666' }}>Không có món</span>
                       )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td>{order.totalAmount?.toLocaleString('vi-VN') || '0'} ₫</td>
+                    <td>{getStatusBadge(order.status || 'PENDING')}</td>
+                    <td>
+                      {order.orderTime
+                        ? new Date(order.orderTime).toLocaleString('vi-VN')
+                        : '-'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexDirection: 'column' }}>
+                        <select
+                          value={order.status || 'PENDING'}
+                          onChange={(e) => handleUpdateStatus(orderId, e.target.value)}
+                          style={{ padding: '0.25rem' }}
+                        >
+                          <option value="PENDING">Đang chờ</option>
+                          <option value="COMPLETED">Hoàn thành</option>
+                          <option value="CANCELLED">Hủy</option>
+                        </select>
+                        {order.status === 'PENDING' && (
+                          <button
+                            onClick={() => setTransferringOrderId(orderId)}
+                            className="btn btn-secondary"
+                            style={{ padding: '0.25rem 0.5rem', fontSize: '0.85rem' }}
+                          >
+                            Chuyển bàn
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -136,9 +151,9 @@ function OrderManagement() {
 
       {/* Modal chuyển bàn */}
       {transferringOrderId && (
-        <div className="modal" onClick={() => setTransferringOrderId(null)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3>Chuyển bàn cho Order #{transferringOrderId}</h3>
+        <div className="modal-overlay" onClick={() => setTransferringOrderId(null)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Chuyển bàn cho Order #{transferringOrderId?.toString().slice(-6) || transferringOrderId}</h3>
             <div className="form-group">
               <label>Chọn bàn mới (chỉ hiển thị bàn trống)</label>
               <select
@@ -148,11 +163,14 @@ function OrderManagement() {
                 <option value="">-- Chọn bàn --</option>
                 {tables
                   .filter((table) => table.status === 'AVAILABLE')
-                  .map((table) => (
-                    <option key={table.id} value={table.id}>
-                      Bàn {table.tableNumber} - {table.seats} chỗ
-                    </option>
-                  ))}
+                  .map((table) => {
+                    const tableId = table._id || table.id;
+                    return (
+                      <option key={tableId} value={tableId}>
+                        Bàn {table.tableNumber} - {table.capacity || table.seats || 0} chỗ
+                      </option>
+                    );
+                  })}
               </select>
             </div>
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>

@@ -1,13 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const CafeTable = require('../models/CafeTable');
+const Order = require('../models/Order');
 const { authMiddleware, adminMiddleware } = require('../middleware/auth');
 
 // Get all tables (public)
 router.get('/', async (req, res) => {
   try {
     const tables = await CafeTable.find();
-    res.json(tables);
+    
+    // Auto-cleanup: Set tables with PAID status to AVAILABLE if no active orders
+    const updatePromises = tables.map(async (table) => {
+      if (table.status === 'PAID' || table.status === 'OCCUPIED') {
+        const activeOrders = await Order.find({
+          tableId: table._id,
+          status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] }
+        });
+        
+        // Nếu không còn order active, set về AVAILABLE
+        if (activeOrders.length === 0 && table.status !== 'AVAILABLE') {
+          table.status = 'AVAILABLE';
+          await table.save();
+        }
+      }
+    });
+    
+    await Promise.all(updatePromises);
+    
+    // Reload tables after cleanup
+    const updatedTables = await CafeTable.find();
+    res.json(updatedTables);
   } catch (error) {
     console.error('Error getting tables:', error);
     res.status(500).json({
@@ -20,6 +42,24 @@ router.get('/', async (req, res) => {
 // Get available tables (public)
 router.get('/available', async (req, res) => {
   try {
+    // Auto-cleanup: Set tables with PAID status to AVAILABLE if no active orders
+    const allTables = await CafeTable.find({ status: { $in: ['AVAILABLE', 'PAID'] } });
+    
+    for (const table of allTables) {
+      if (table.status === 'PAID') {
+        const activeOrders = await Order.find({
+          tableId: table._id,
+          status: { $in: ['PENDING', 'CONFIRMED', 'PREPARING', 'READY'] }
+        });
+        
+        if (activeOrders.length === 0) {
+          table.status = 'AVAILABLE';
+          await table.save();
+        }
+      }
+    }
+    
+    // Return only AVAILABLE tables
     const tables = await CafeTable.find({ status: 'AVAILABLE' });
     res.json(tables);
   } catch (error) {
