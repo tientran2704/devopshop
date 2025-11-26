@@ -1,9 +1,9 @@
 import axios from 'axios';
 
-// Trong Docker, gọi API qua nginx proxy
-// Ngoài Docker, gọi trực tiếp backend
-// Force localhost for development - OVERRIDE any env variable
-const API_URL = 'http://localhost:8080';
+// URL backend:
+// - Dev (local): mặc định http://localhost:8080
+// - Prod (Render / server khác): cấu hình biến môi trường REACT_APP_API_URL
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 // Log để đảm bảo dùng đúng URL
 console.log('%c🔧 API URL:', 'color: blue; font-weight: bold; font-size: 14px', API_URL);
