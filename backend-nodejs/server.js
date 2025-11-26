@@ -6,8 +6,17 @@ const mongoose = require('mongoose');
 const app = express();
 
 // Middleware
+// CORS: cho phép frontend local + frontend deploy (config qua CORS_ORIGIN, có thể là danh sách cách nhau bởi dấu phẩy)
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:3000').split(',');
 app.use(cors({
-  origin: process.env.CORS_ORIGIN || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // Allow non-browser clients or same-origin
+    if (!origin || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    console.warn('❌ CORS blocked for origin:', origin);
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json());

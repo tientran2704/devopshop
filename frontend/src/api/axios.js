@@ -10,7 +10,7 @@ console.log('%c🔧 API URL:', 'color: blue; font-weight: bold; font-size: 14px'
 
 const api = axios.create({
   baseURL: API_URL,
-  timeout: 10000, // 10 seconds timeout
+  timeout: 30000, // 30 seconds timeout (để backend trên Render kịp wake up)
   headers: {
     'Content-Type': 'application/json',
   },
