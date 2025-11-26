@@ -1,15 +1,14 @@
 services:
   backend:
     build:
-      context: ./backend
+      context: ./backend-nodejs
       dockerfile: Dockerfile
     container_name: cafe_backend
     restart: always
     environment:
       MONGODB_URI: "mongodb+srv://tranvanducqb1022_db_user:HbQrOcg6aqkIdlEd@cluster0.talji12.mongodb.net/?appName=Cluster0"
       MONGODB_DATABASE: cafe_db
-      SPRING_PROFILES_ACTIVE: prod
-      JAVA_OPTS: "-Xmx512m -Xms256m"
+      NODE_ENV: production   # dùng cho Node, không cần SPRING_PROFILES_ACTIVE
     ports:
       - "8080:8080"
     networks:
