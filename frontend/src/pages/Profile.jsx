@@ -10,10 +10,17 @@ function Profile() {
     const fetchProfile = async () => {
       try {
         const response = await userService.getMe();
-        setProfile(response.data);
+        if (response && response.data) {
+          setProfile(response.data);
+        } else {
+          setError('Không nhận được dữ liệu từ server');
+        }
       } catch (err) {
         console.error('Error loading profile:', err);
-        setError(err.response?.data?.message || 'Không thể tải thông tin cá nhân');
+        const errorMessage = err.response?.data?.message 
+          || err.message 
+          || 'Không thể tải thông tin cá nhân. Vui lòng thử lại sau.';
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }

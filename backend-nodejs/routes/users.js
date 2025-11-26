@@ -9,19 +9,49 @@ router.use(authMiddleware);
 // Get profile of current user
 router.get('/me', async (req, res) => {
   try {
+    // Validate user ID from token
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        error: 'Unauthorized',
+        message: 'User information not found in token'
+      });
+    }
+
+    // Find user by ID
     const user = await User.findById(req.user.id).select('-password');
+    
     if (!user) {
       return res.status(404).json({
         error: 'Not Found',
         message: 'User not found'
       });
     }
-    res.json(user);
+
+    // Return user data
+    res.json({
+      _id: user._id,
+      username: user.username,
+      fullName: user.fullName,
+      email: user.email || null,
+      phone: user.phone || null,
+      role: user.role,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt
+    });
   } catch (error) {
     console.error('Error getting user profile:', error);
+    
+    // Handle specific MongoDB errors
+    if (error.name === 'CastError') {
+      return res.status(400).json({
+        error: 'Bad Request',
+        message: 'Invalid user ID format'
+      });
+    }
+
     res.status(500).json({
       error: 'Internal Server Error',
-      message: error.message
+      message: error.message || 'Failed to retrieve user profile'
     });
   }
 });
