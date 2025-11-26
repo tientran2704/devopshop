@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { paymentConfigService } from '../api/services';
-import { authService } from '../api/services';
+import { paymentConfigService, authService } from '../api/services';
+
+// Base URL dùng để hiển thị ảnh QR ở môi trường deploy
+const API_BASE_URL = process.env.REACT_APP_API_URL || '';
 
 function PaymentManagement() {
   const [configs, setConfigs] = useState([]);
@@ -116,7 +118,7 @@ function PaymentManagement() {
       description: config.description || '',
       active: config.active !== undefined ? config.active : true
     });
-    setImagePreview(config.qrCodeImage ? `http://localhost:8080${config.qrCodeImage}` : null);
+    setImagePreview(config.qrCodeImage ? `${API_BASE_URL}${config.qrCodeImage}` : null);
     setQrCodeImage(null);
     setShowModal(true);
   };
@@ -238,7 +240,7 @@ function PaymentManagement() {
             {config.qrCodeImage && (
               <div style={{ margin: '1rem 0', textAlign: 'center' }}>
                 <img
-                  src={`http://localhost:8080${config.qrCodeImage}`}
+                  src={`${API_BASE_URL}${config.qrCodeImage}`}
                   alt="QR Code"
                   style={{ maxWidth: '200px', maxHeight: '200px', border: '1px solid #ddd', borderRadius: '4px' }}
                 />
